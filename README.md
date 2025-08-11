@@ -43,3 +43,22 @@ Each service has its own directory with source code:
 - `fastapi_app/`: FastAPI application
 - `mcp_server/`: MCP server implementation
 - `postgres/`: Database initialization scripts
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+### Attribution Requirement
+
+If you use this code in your projects, please provide attribution by including:
+- A link to this repository: https://github.com/Lcodeee/ai-mcp-vecDB-base
+- Copyright notice: "© 2025 Lcodeee"
+- Apache License 2.0 notice
+
+### Third-Party Components
+
+This project uses various open-source components. See [NOTICE](NOTICE) file for detailed attribution information.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.

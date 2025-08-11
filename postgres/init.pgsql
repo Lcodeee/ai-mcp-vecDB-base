@@ -1,5 +1,8 @@
 -- PostgreSQL Database Initialization with pgvector
 -- File extension .pgsql ensures VS Code recognizes this as PostgreSQL syntax
+--
+-- Copyright 2025 Lcodeee
+-- Licensed under the Apache License, Version 2.0
 
 -- Initialize database with pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
