@@ -317,10 +317,90 @@ async def list_tools():
             "name": "get_chat_history",
             "description": "Get chat history for a session",
             "parameters": ["session_id", "limit"]
+        },
+        {
+            "name": "search_by_category",
+            "description": "Search documents by category in metadata",
+            "parameters": ["category", "limit"]
+        },
+        {
+            "name": "search_by_date_range",
+            "description": "Search documents within a specific date range",
+            "parameters": ["start_date", "end_date", "limit"]
         }
     ]
     
     return MCPResponse(success=True, data={"tools": tools})
+
+#######################################################################
+# Additional tool for searching by category
+@app.post("/tools/search_by_category", response_model=MCPResponse)
+async def search_by_category(request: dict):
+    """חפש מסמכים לפי קטגוריה במטאדטה"""
+    try:
+        category = request.get("category")
+        limit = request.get("limit", 5)
+        
+        def _db_op():
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT id, content, metadata, created_at
+                        FROM documents 
+                        WHERE metadata->>'category' = %s
+                        ORDER BY created_at DESC
+                        LIMIT %s
+                    """, (category, limit))
+                    return cur.fetchall()
+        
+        results = await asyncio.to_thread(_db_op)
+                
+        return MCPResponse(
+            success=True,
+            data={
+                "category": category,
+                "results": [dict(row) for row in results],
+                "count": len(results)
+            }
+        )
+    except Exception as e:
+        logger.error(f"Category search failed: {e}")
+        return MCPResponse(success=False, error=str(e))
+
+@app.post("/tools/search_by_date_range", response_model=MCPResponse)
+async def search_by_date_range(request: dict):
+    """חפש מסמכים בטווח תאריכים מסויים"""
+    try:
+        start_date = request.get("start_date")
+        end_date = request.get("end_date")
+        limit = request.get("limit", 10)
+        
+        def _db_op():
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT id, content, metadata, created_at
+                        FROM documents 
+                        WHERE created_at >= %s AND created_at <= %s
+                        ORDER BY created_at DESC
+                        LIMIT %s
+                    """, (start_date, end_date, limit))
+                    return cur.fetchall()
+        
+        results = await asyncio.to_thread(_db_op)
+                
+        return MCPResponse(
+            success=True,
+            data={
+                "start_date": start_date,
+                "end_date": end_date,
+                "results": [dict(row) for row in results],
+                "count": len(results)
+            }
+        )
+    except Exception as e:
+        logger.error(f"Date range search failed: {e}")
+        return MCPResponse(success=False, error=str(e))
 
 # if __name__ == "__main__":
 #     uvicorn.run(

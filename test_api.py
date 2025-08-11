@@ -138,6 +138,7 @@ async def test_api():
             print(f"   ✗ Chat history failed: {e}\n")
             all_tests_passed = False
 
+
         # Test list MCP tools
         print("8. Testing list MCP tools...")
         try:
@@ -154,6 +155,29 @@ async def test_api():
         except Exception as e:
             print(f"   ✗ List MCP tools failed: {e}\n")
             all_tests_passed = False
+
+
+         # Test category search
+        print("9. Testing category search...")
+        try:
+            category_data = {
+                "category": "database",
+                "limit": 3
+            }
+            response = await client.post(f"{BASE_URL}/search_category", json=category_data)
+            print(f"   Status: {response.status_code}")
+            if response.status_code == 200:
+                result = response.json()
+                print(f"   Success: {result['success']}")
+                if result['success']:
+                    results = result['data']['results']
+                    print(f"   Found {len(results)} documents in category")
+                print("   ✓ Category search passed\n")
+        except Exception as e:
+            print(f"   ✗ Category search failed: {e}\n")
+            all_tests_passed = False
+
+            
 
         print("=" * 50)
         if all_tests_passed:

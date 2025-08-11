@@ -62,7 +62,20 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
+
+
+
 # Pydantic models
+class CategorySearchRequest(BaseModel):
+    category: str
+    limit: int = 5
+
+class DateRangeSearchRequest(BaseModel):
+    start_date: str
+    end_date: str
+    limit: int = 10
+
+
 class ProcessRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
@@ -327,4 +340,44 @@ async def list_mcp_tools():
         return response.json()
     except Exception as e:
         logger.error(f"Failed to list MCP tools: {e}")
+        return APIResponse(success=False, error=str(e))
+    
+
+@app.post("/search_category", response_model=APIResponse)
+async def search_by_category(request: CategorySearchRequest):
+    """חפש מסמכים לפי קטגוריה"""
+    try:
+        result = await mcp_client.call_tool("search_by_category", {
+            "category": request.category,
+            "limit": request.limit
+        })
+        
+        return APIResponse(
+            success=result.get("success", False),
+            data=result.get("data"),
+            error=result.get("error"),
+            source="mcp_server"
+        )
+    except Exception as e:
+        logger.error(f"Category search failed: {e}")
+        return APIResponse(success=False, error=str(e))
+
+@app.post("/search_date_range", response_model=APIResponse)
+async def search_by_date_range(request: DateRangeSearchRequest):
+    """חפש מסמכים בטווח תאריכים"""
+    try:
+        result = await mcp_client.call_tool("search_by_date_range", {
+            "start_date": request.start_date,
+            "end_date": request.end_date,
+            "limit": request.limit
+        })
+        
+        return APIResponse(
+            success=result.get("success", False),
+            data=result.get("data"),
+            error=result.get("error"),
+            source="mcp_server"
+        )
+    except Exception as e:
+        logger.error(f"Date range search failed: {e}")
         return APIResponse(success=False, error=str(e))
