@@ -109,7 +109,7 @@ class GeminiManager:
         self.model = None
         self.embedding_model_name = 'models/embedding-001'
         if GEMINI_API_KEY:
-            self.model = genai.GenerativeModel('gemini-pro')
+            self.model = genai.GenerativeModel('gemini-1.5-flash')
     
     async def generate_embedding(self, text: str) -> List[float]:
         """Generate embedding for text using Gemini by running the sync SDK call in a thread."""

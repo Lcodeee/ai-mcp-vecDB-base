@@ -129,7 +129,7 @@ class GeminiManager:
     def __init__(self):
         self.model = None
         if GEMINI_API_KEY:
-            self.model = genai.GenerativeModel('gemini-pro')
+            self.model = genai.GenerativeModel('gemini-1.5-flash')
     
     async def generate_response(self, prompt: str) -> str:
         """Generate response using Gemini"""
