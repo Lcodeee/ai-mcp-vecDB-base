@@ -1,0 +1,237 @@
+{
+    "info": {
+        "name": "AI Advanced App API",
+        "description": "Collection for testing the AI Advanced App with MCP Server and Gemini AI",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Health Check",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/health",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "health"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Root Endpoint",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/",
+                    "host": [
+                        "{{base_url}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Process Message (with Vector Search)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"message\": \"What do you know about PostgreSQL?\",\n  \"session_id\": \"test-session-1\",\n  \"use_vector_search\": true\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/process",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "process"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Process Message (Direct Gemini)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"message\": \"Tell me a joke about databases\",\n  \"session_id\": \"test-session-1\",\n  \"use_vector_search\": false\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/process",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "process"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Vector Search",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"query\": \"database system\",\n  \"limit\": 5\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/search",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "search"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Add Document",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"content\": \"Docker is a platform for developing, shipping, and running applications using containerization technology.\",\n  \"metadata\": {\n    \"type\": \"definition\",\n    \"category\": \"containerization\",\n    \"source\": \"user_input\"\n  }\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/add_document",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "add_document"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Get Chat History",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/chat_history?session_id=test-session-1&limit=10",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "chat_history"
+                    ],
+                    "query": [
+                        {
+                            "key": "session_id",
+                            "value": "test-session-1"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "10"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Direct Gemini Chat",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"message\": \"Explain what machine learning is in simple terms\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/gemini_direct",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "gemini_direct"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "List MCP Tools",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/mcp_tools",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "mcp_tools"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Call MCP Tool Directly",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"tool_name\": \"vector_search\",\n  \"parameters\": {\n    \"query\": \"FastAPI framework\",\n    \"limit\": 3\n  }\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/mcp_tool",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "mcp_tool"
+                    ]
+                }
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000",
+            "type": "string"
+        }
+    ]
+}
