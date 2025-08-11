@@ -2,6 +2,24 @@
 
 A multi-container system with PostgreSQL (pgvector), MCP Server, and FastAPI application.
 
+## 🌟 Quick Start
+
+### For Linux/Mac Users:
+```bash
+./start.sh
+```
+
+### For Windows Users:
+```batch
+start-win.bat
+```
+**👉 Windows users: See [README-Windows.md](README-Windows.md) for detailed Windows setup guide**
+
+### Manual Setup (All Systems):
+```bash
+docker-compose up --build
+```
+
 ## System Components
 
 1. **PostgreSQL with pgvector**: Vector database for storing embeddings and data

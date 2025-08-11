@@ -346,6 +346,8 @@ google-generativeai==0.3.2
 
 במדריך זה, יצרנו כמה סקריפטי עזר שמקלים על ניהול המערכת:
 
+#### עבור Linux/Mac (bash):
+
 **`start.sh`** - הפעלת המערכת מלאה
 
 &nbsp;
@@ -364,6 +366,19 @@ chmod +x start.sh
 ./start.sh
 ```
 
+#### עבור Windows (batch):
+
+**`start-win.bat`** - הפעלת המערכת מלאה
+
+&nbsp;
+
+```batch
+REM להפעלת המערכת ב-Windows:
+start-win.bat
+```
+
+**או לחילופין, לחיצה כפולה על הקובץ במנהל הקבצים**
+
 מה הסקריפט עושה:
 - בודק אם קיים קובץ `.env` ואם לא - יוצר אחד מהתבנית
 - מרים את כל השירותים עם `docker-compose up --build -d`
@@ -371,14 +386,29 @@ chmod +x start.sh
 - בודק בריאות של כל השירותים
 - מציג כתובות לגישה למערכת
 
-**`stop.sh`** - כיבוי המערכת:
+#### כיבוי המערכת:
+
+**Linux/Mac:**
+
+&nbsp;
 
 ```bash
 # לכיבוי המערכת:
 ./stop.sh
 ```
 
-**`test_api.py`** - בדיקת המערכת
+**Windows:**
+
+&nbsp;
+
+```batch
+REM לכיבוי המערכת ב-Windows:
+stop-win.bat
+```
+
+#### בדיקת המערכת:
+
+**`test_api.py`** - בדיקת המערכת (עובד בכל המערכות)
 
 **הרצת הטסטים:**
 
@@ -392,64 +422,39 @@ python test_api.py
 python3 test_api.py
 ```
 
-**`stop.sh`** - כיבוי המערכת
-
-**הפעלת הכיבוי:**
-
-&nbsp;
-
-```bash
-# לכיבוי המערכת:
-./stop.sh
-
-# אם צריך הרשאות:
-chmod +x stop.sh
-./stop.sh
-```
-
-**`test_api.py`** - בדיקת המערכת:
-
-<div dir="ltr">
-
-```bash
-# הרצת בדיקות המערכת:
-python test_api.py
-
-# או עם Python 3:
-python3 test_api.py
-```
-
-</div>
-
 **למה להשתמש בסקריפטים:**
 - **חיסכון בזמן:** במקום להקליד פקודות ארוכות
 - **אמינות:** הסקריפט זוכר את כל השלבים
 - **בדיקות:** הסקריפט בודק שהכל עובד
 - **נוחות:** מציג הודעות ברורות על מצב המערכת
+- **תמיכה רב-פלטפורמית:** סקריפטים נפרדים לLinux/Mac ו-Windows
 
-**`stop.sh`** - כיבוי המערכת
-
-&nbsp;
-
-```bash
-# לכיבוי המערכת:
-./stop.sh
-```
-
-**`test_api.py`** - בדיקת המערכת
-
-&nbsp;
-
-```bash
-# הרצת בדיקות המערכת:
-python test_api.py
-```
-
-**הערה חשובה:** כל הסקריפטים האלה כבר קיימים בפרויקט! אתם לא צריכים ליצור אותם מחדש. הקבצים נמצאים בתיקיית הroot של הפרויקט.
+**הערה חשובה:** כל הסקריפטים האלה כבר קיימים בפרויקט! אתם לא צריכים ליצור אותם מחדש. הקבצים נמצאים בתיקיית הroot של הפרויקט:
+- `start.sh` - עבור Linux/Mac
+- `start-win.bat` - עבור Windows  
+- `stop.sh` - עבור Linux/Mac
+- `stop-win.bat` - עבור Windows
+- `test_api.py` - עבור כל המערכות
 
 ---
 
 ## 🎯 איך להריץ את המערכת
+
+### דרישות מערכת
+
+**עבור כל המערכות:**
+- Docker Desktop מותקן ופועל
+- Python 3.8+ (עבור הרצת בדיקות)
+- Git (אופציונלי, לשכפול הפרויקט)
+
+**עבור Windows:**
+- Windows 10/11 (מומלץ)
+- WSL2 מופעל (עבור Docker Desktop)
+- PowerShell או Command Prompt
+
+**עבור Linux/Mac:**
+- curl מותקן (עבור בדיקות הסקריפט)
+- bash shell
 
 ### שלב 1: הכנה
 
@@ -472,6 +477,8 @@ GEMINI_API_KEY=your_actual_api_key_here
 
 **הפעלת המערכת:**
 
+**Linux/Mac:**
+
 &nbsp;
 
 ```bash
@@ -479,7 +486,16 @@ GEMINI_API_KEY=your_actual_api_key_here
 ./start.sh
 ```
 
-**או באופן ידני:**
+**Windows:**
+
+&nbsp;
+
+```batch
+REM הפעלת המערכת ב-Windows
+start-win.bat
+```
+
+**או באופן ידני (כל המערכות):**
 
 &nbsp;
 
