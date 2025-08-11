@@ -35,6 +35,10 @@
 
 ### יצירת התיקיות
 
+**פקודות היצירה:**
+
+&nbsp;
+
 ```bash
 mkdir ai-mcp-vecDB-base
 cd ai-mcp-vecDB-base
@@ -340,20 +344,108 @@ google-generativeai==0.3.2
 
 ### סקריפטי עזר
 
-**`start.sh`** - הפעלת המערכת:
+במדריך זה, יצרנו כמה סקריפטי עזר שמקלים על ניהול המערכת:
+
+**`start.sh`** - הפעלת המערכת מלאה
+
+&nbsp;
+
 ```bash
-#!/bin/bash
-# בדיקת קובץ .env
-# הפעלת כל השירותים
-# המתנה שהכל יהיה מוכן
-# בדיקת בריאות השירותים
+# להפעלת המערכת:
+./start.sh
 ```
 
-**`stop.sh`** - כיבוי המערכת:
+**אם יש שגיאת הרשאות:**
+
+&nbsp;
+
 ```bash
-#!/bin/bash
-docker-compose down
+chmod +x start.sh
+./start.sh
 ```
+
+מה הסקריפט עושה:
+- בודק אם קיים קובץ `.env` ואם לא - יוצר אחד מהתבנית
+- מרים את כל השירותים עם `docker-compose up --build -d`
+- מחכה שהשירותים יהיו מוכנים (PostgreSQL, MCP Server)
+- בודק בריאות של כל השירותים
+- מציג כתובות לגישה למערכת
+
+**`stop.sh`** - כיבוי המערכת:
+
+```bash
+# לכיבוי המערכת:
+./stop.sh
+```
+
+**`test_api.py`** - בדיקת המערכת
+
+**הרצת הטסטים:**
+
+&nbsp;
+
+```bash
+# הרצת בדיקות המערכת:
+python test_api.py
+
+# או עם Python 3:
+python3 test_api.py
+```
+
+**`stop.sh`** - כיבוי המערכת
+
+**הפעלת הכיבוי:**
+
+&nbsp;
+
+```bash
+# לכיבוי המערכת:
+./stop.sh
+
+# אם צריך הרשאות:
+chmod +x stop.sh
+./stop.sh
+```
+
+**`test_api.py`** - בדיקת המערכת:
+
+<div dir="ltr">
+
+```bash
+# הרצת בדיקות המערכת:
+python test_api.py
+
+# או עם Python 3:
+python3 test_api.py
+```
+
+</div>
+
+**למה להשתמש בסקריפטים:**
+- **חיסכון בזמן:** במקום להקליד פקודות ארוכות
+- **אמינות:** הסקריפט זוכר את כל השלבים
+- **בדיקות:** הסקריפט בודק שהכל עובד
+- **נוחות:** מציג הודעות ברורות על מצב המערכת
+
+**`stop.sh`** - כיבוי המערכת
+
+&nbsp;
+
+```bash
+# לכיבוי המערכת:
+./stop.sh
+```
+
+**`test_api.py`** - בדיקת המערכת
+
+&nbsp;
+
+```bash
+# הרצת בדיקות המערכת:
+python test_api.py
+```
+
+**הערה חשובה:** כל הסקריפטים האלה כבר קיימים בפרויקט! אתם לא צריכים ליצור אותם מחדש. הקבצים נמצאים בתיקיית הroot של הפרויקט.
 
 ---
 
@@ -361,34 +453,56 @@ docker-compose down
 
 ### שלב 1: הכנה
 
+**העתקת קובץ משתני הסביבה:**
+
+&nbsp;
+
 ```bash
-# 1. העתקת תבנית משתני הסביבה
+# העתקת תבנית משתני הסביבה
 cp .env.example .env
 
-# 2. עריכת הקובץ והוספת המפתחות
+# עריכת הקובץ והוספת המפתחות
 nano .env  # או עורך אחר
 
-# 3. הוספת מפתח Gemini API
+# הוספת מפתח Gemini API
 GEMINI_API_KEY=your_actual_api_key_here
 ```
 
 ### שלב 2: הפעלה
 
+**הפעלת המערכת:**
+
+&nbsp;
+
 ```bash
 # הפעלת המערכת
 ./start.sh
+```
 
-# או ידנית:
+**או באופן ידני:**
+
+&nbsp;
+
+```bash
 docker-compose up --build
 ```
 
 ### שלב 3: בדיקה
 
+**הרצת הטסטים:**
+
+&nbsp;
+
 ```bash
 # הרצת הטסטים
 python test_api.py
+```
 
-# בדיקה ידנית
+**או בדיקה ידנית:**
+
+&nbsp;
+
+```bash
 curl http://localhost:8000/health
 ```
 
@@ -397,6 +511,10 @@ curl http://localhost:8000/health
 ## 🧪 הרצת בדיקות מפורטת
 
 ### 1. בדיקה עם הסקריפט
+
+**הרצת הסקריפט:**
+
+&nbsp;
 
 ```bash
 python test_api.py
@@ -411,6 +529,10 @@ python test_api.py
 
 ### 2. בדיקה עם Postman
 
+**ייבוא הקולקציה:**
+
+&nbsp;
+
 ```bash
 # ייבוא הקולקציה
 postman_collection.json
@@ -423,6 +545,10 @@ GET  http://localhost:8000/chat_history
 ```
 
 ### 3. בדיקה ידנית עם curl
+
+**פקודות לבדיקה:**
+
+&nbsp;
 
 ```bash
 # בדיקת בריאות
@@ -498,7 +624,10 @@ async def search_by_category(category: str, limit: int = 5):
 
 3. הוסף את הכלי לרשימה ב-`list_tools()`
 
-**בדיקה:**
+**בדיקת הכלי:**
+
+&nbsp;
+
 ```bash
 curl -X POST "http://localhost:8001/tools/search_by_category" \
      -H "Content-Type: application/json" \
@@ -542,7 +671,10 @@ async def search_by_category(request: CategorySearchRequest):
         return APIResponse(success=False, error=str(e))
 ```
 
-**בדיקה:**
+**בדיקת הendpoint:**
+
+&nbsp;
+
 ```bash
 curl -X POST "http://localhost:8000/search_category" \
      -H "Content-Type: application/json" \
