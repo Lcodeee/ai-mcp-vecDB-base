@@ -25,8 +25,10 @@ from typing import Any, Dict, List, Optional
 from contextlib import asynccontextmanager
 import numpy as np
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
+import PyPDF2
+import io
 import google.generativeai as genai
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -77,6 +79,15 @@ class MCPResponse(BaseModel):
     success: bool
     data: Any
     error: Optional[str] = None
+
+class PDFUploadRequest(BaseModel):
+    title: str
+    category: Optional[str] = "manual"
+
+class PDFQuestionRequest(BaseModel):
+    question: str
+    pdf_category: Optional[str] = "manual"
+    limit: int = 3
 
 class DatabaseManager:
     def __init__(self):
@@ -143,6 +154,22 @@ class GeminiManager:
         except Exception as e:
             logger.error(f"Response generation failed: {e}")
             return f"Error generating response: {str(e)}"
+    
+    async def extract_text_from_pdf(self, pdf_content: bytes) -> str:
+        """Extract text from PDF content"""
+        def _extract():
+            pdf_file = io.BytesIO(pdf_content)
+            pdf_reader = PyPDF2.PdfReader(pdf_file)
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text() + "\n"
+            return text
+        
+        try:
+            return await asyncio.to_thread(_extract)
+        except Exception as e:
+            logger.error(f"PDF text extraction failed: {e}")
+            return f"Error extracting text from PDF: {str(e)}"
 
 # Initialize Gemini manager
 gemini_manager = GeminiManager()
@@ -327,6 +354,16 @@ async def list_tools():
             "name": "search_by_date_range",
             "description": "Search documents within a specific date range",
             "parameters": ["start_date", "end_date", "limit"]
+        },
+        {
+            "name": "upload_pdf_manual",
+            "description": "Upload PDF instruction manual for Q&A support",
+            "parameters": ["title", "category", "file"]
+        },
+        {
+            "name": "ask_pdf_manual",
+            "description": "Ask questions about uploaded PDF manuals",
+            "parameters": ["question", "pdf_category", "limit"]
         }
     ]
     
@@ -365,6 +402,152 @@ async def search_by_category(request: dict):
         )
     except Exception as e:
         logger.error(f"Category search failed: {e}")
+        return MCPResponse(success=False, error=str(e))
+
+@app.post("/tools/upload_pdf_manual", response_model=MCPResponse)
+async def upload_pdf_manual(title: str, category: str = "manual", file: UploadFile = File(...)):
+    """Upload PDF instruction manual and process it for Q&A"""
+    try:
+        if not file.filename.lower().endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+        
+        # Read PDF content
+        pdf_content = await file.read()
+        
+        # Extract text from PDF
+        extracted_text = await gemini_manager.extract_text_from_pdf(pdf_content)
+        
+        if extracted_text.startswith("Error"):
+            return MCPResponse(success=False, error=extracted_text)
+        
+        # Generate embedding for the extracted text
+        embedding = await gemini_manager.generate_embedding(extracted_text)
+        
+        # Save to database with metadata
+        metadata = {
+            "title": title,
+            "category": category,
+            "type": "pdf_manual",
+            "filename": file.filename,
+            "text_length": len(extracted_text)
+        }
+        
+        def _db_op():
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        INSERT INTO documents (content, embedding, metadata)
+                        VALUES (%s, %s::vector, %s)
+                        RETURNING id
+                    """, (extracted_text, str(embedding), json.dumps(metadata)))
+                    doc_id = cur.fetchone()['id']
+                    conn.commit()
+                    return doc_id
+
+        doc_id = await asyncio.to_thread(_db_op)
+
+        return MCPResponse(
+            success=True,
+            data={
+                "document_id": doc_id,
+                "title": title,
+                "category": category,
+                "filename": file.filename,
+                "text_length": len(extracted_text),
+                "message": "PDF manual uploaded and processed successfully"
+            }
+        )
+    except Exception as e:
+        logger.error(f"PDF upload failed: {e}")
+        return MCPResponse(success=False, error=str(e))
+
+@app.post("/tools/ask_pdf_manual", response_model=MCPResponse)
+async def ask_pdf_manual(request: PDFQuestionRequest):
+    """Ask questions about PDF manuals"""
+    try:
+        # Search for relevant manual content
+        query_embedding = await gemini_manager.generate_embedding(request.question)
+        
+        def _db_op():
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cur:
+                    if request.pdf_category:
+                        cur.execute("""
+                            SELECT id, content, metadata, 
+                                   1 - (embedding <=> %s::vector) as similarity
+                            FROM documents 
+                            WHERE embedding IS NOT NULL 
+                            AND metadata->>'type' = 'pdf_manual'
+                            AND metadata->>'category' = %s
+                            ORDER BY embedding <=> %s::vector
+                            LIMIT %s
+                        """, (str(query_embedding), request.pdf_category, str(query_embedding), request.limit))
+                    else:
+                        cur.execute("""
+                            SELECT id, content, metadata, 
+                                   1 - (embedding <=> %s::vector) as similarity
+                            FROM documents 
+                            WHERE embedding IS NOT NULL 
+                            AND metadata->>'type' = 'pdf_manual'
+                            ORDER BY embedding <=> %s::vector
+                            LIMIT %s
+                        """, (str(query_embedding), str(query_embedding), request.limit))
+                    return cur.fetchall()
+
+        results = await asyncio.to_thread(_db_op)
+        
+        if not results:
+            return MCPResponse(
+                success=True,
+                data={
+                    "question": request.question,
+                    "answer": "לא נמצאו ספרי הוראות רלוונטיים למענה על השאלה.",
+                    "sources": []
+                }
+            )
+        
+        # Build context from relevant manual sections
+        context_parts = []
+        sources = []
+        for row in results:
+            context_parts.append(f"מתוך ספר הוראות '{row['metadata']['title']}': {row['content'][:500]}...")
+            # Handle potential NaN or infinity values
+            similarity = row.get('similarity', 0.0)
+            if not isinstance(similarity, (int, float)) or similarity != similarity or similarity == float('inf') or similarity == float('-inf'):
+                similarity = 0.0
+            sources.append({
+                "document_id": row['id'],
+                "title": row['metadata']['title'],
+                "similarity": round(float(similarity), 4)
+            })
+        
+        context = "\n\n".join(context_parts)
+        
+        # Generate answer using Gemini
+        prompt = f"""
+        אתה עוזר תמיכה טכנית המבוסס על ספרי הוראות. ענה על השאלה בעברית בצורה ברורה ומדויקת.
+        
+        הקשר מספרי ההוראות:
+        {context}
+        
+        שאלת המשתמש: {request.question}
+        
+        תן תשובה מקצועית ומועילה המבוססת על המידע מספרי ההוראות. אם המידע לא מספיק, ציין זאת.
+        """
+        
+        answer = await gemini_manager.generate_response(prompt)
+        
+        return MCPResponse(
+            success=True,
+            data={
+                "question": request.question,
+                "answer": answer,
+                "sources": sources,
+                "context_used": len(results)
+            }
+        )
+    except Exception as e:
+        logger.error(f"PDF Q&A failed: {e}")
         return MCPResponse(success=False, error=str(e))
 
 @app.post("/tools/search_by_date_range", response_model=MCPResponse)

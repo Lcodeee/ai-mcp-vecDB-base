@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת שאלות ותשובות - ספר הוראות</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+
+        input,
+        textarea,
+        select,
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .loading {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .file-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🤖 מערכת שאלות ותשובות - ספר הוראות</h1>
+
+        <!-- PDF Upload Section -->
+        <div class="section">
+            <h2>📤 העלאת ספר הוראות (PDF)</h2>
+            <input type="text" id="pdfTitle" placeholder="שם ספר ההוראות..." required>
+            <input type="text" id="pdfCategory" placeholder="קטגוריה (אופציונלי)" value="manual">
+            <input type="file" id="pdfFile" accept=".pdf" required>
+            <div class="file-info">רק קבצי PDF מותרים</div>
+            <button onclick="uploadPDF()" id="uploadBtn">העלה ספר הוראות</button>
+            <div id="uploadResult"></div>
+        </div>
+
+        <!-- Q&A Section -->
+        <div class="section">
+            <h2>❓ שאל שאלה על ספר ההוראות</h2>
+            <textarea id="question" rows="3" placeholder="הקלד את השאלה שלך כאן..."></textarea>
+            <input type="text" id="questionCategory" placeholder="קטגוריה לחיפוש (אופציונלי)" value="manual">
+            <button onclick="askQuestion()" id="askBtn">שאל שאלה</button>
+            <div id="questionResult"></div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="section">
+            <h2>📋 הוראות שימוש</h2>
+            <ol>
+                <li>וודא שהמערכת רצה (הפעל <code>./start.sh</code> בטרמינל)</li>
+                <li>העלה קובץ PDF עם ספר הוראות</li>
+                <li>המתן לעיבוד הקובץ</li>
+                <li>שאל שאלות בשפה העברית או האנגלית</li>
+                <li>קבל תשובות מבוססות על תוכן ספר ההוראות</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8001';
+
+        async function uploadPDF() {
+            const title = document.getElementById('pdfTitle').value;
+            const category = document.getElementById('pdfCategory').value || 'manual';
+            const fileInput = document.getElementById('pdfFile');
+            const file = fileInput.files[0];
+            const resultDiv = document.getElementById('uploadResult');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (!title || !file) {
+                resultDiv.innerHTML = '<div class="error">אנא מלא את כל השדות הנדרשים</div>';
+                return;
+            }
+
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                resultDiv.innerHTML = '<div class="error">אנא בחר קובץ PDF בלבד</div>';
+                return;
+            }
+
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'מעלה...';
+            resultDiv.innerHTML = '<div class="loading">מעלה ומעבד את קובץ ה-PDF...</div>';
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('title', title);
+            formData.append('category', category);
+
+            try {
+                const response = await fetch(`${API_BASE}/tools/upload_pdf_manual`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ ספר ההוראות הועלה בהצלחה!
+                            
+                            📄 מזהה מסמך: ${result.data.document_id}
+                            📝 אורך טקסט: ${result.data.text_length.toLocaleString()} תווים
+                            📂 קטגוריה: ${result.data.category}
+                        </div>
+                    `;
+
+                    // Clear form
+                    document.getElementById('pdfTitle').value = '';
+                    fileInput.value = '';
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ שגיאה: ${result.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ שגיאת תקשורת: ${error.message}</div>`;
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'העלה ספר הוראות';
+            }
+        }
+
+        async function askQuestion() {
+            const question = document.getElementById('question').value;
+            const category = document.getElementById('questionCategory').value || 'manual';
+            const resultDiv = document.getElementById('questionResult');
+            const askBtn = document.getElementById('askBtn');
+
+            if (!question.trim()) {
+                resultDiv.innerHTML = '<div class="error">אנא הקלד שאלה</div>';
+                return;
+            }
+
+            askBtn.disabled = true;
+            askBtn.textContent = 'מחפש תשובה...';
+            resultDiv.innerHTML = '<div class="loading">מחפש במסמכים ומכין תשובה...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/tools/ask_pdf_manual`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        pdf_category: category,
+                        limit: 3
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    let sourcesHtml = '';
+                    if (result.data.sources && result.data.sources.length > 0) {
+                        sourcesHtml = '<strong>מקורות:</strong><br>';
+                        result.data.sources.forEach(source => {
+                            sourcesHtml += `• ${source.title} (דמיון: ${(source.similarity * 100).toFixed(1)}%)<br>`;
+                        });
+                    }
+
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>❓ השאלה:</strong> ${result.data.question}
+                            
+                            <strong>💬 התשובה:</strong>
+                            ${result.data.answer}
+                            
+                            ${sourcesHtml}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ שגיאה: ${result.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ שגיאת תקשורת: ${error.message}</div>`;
+            } finally {
+                askBtn.disabled = false;
+                askBtn.textContent = 'שאל שאלה';
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('question').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                askQuestion();
+            }
+        });
+
+        // Check server status on load
+        window.addEventListener('load', async function () {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    console.log('✅ Server is running');
+                } else {
+                    console.warn('⚠️ Server health check failed');
+                }
+            } catch (error) {
+                console.error('❌ Cannot connect to server. Make sure Docker containers are running.');
+            }
+        });
+    </script>
+</body>
+
+</html>
