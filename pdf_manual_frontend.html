@@ -171,11 +171,9 @@
 
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('title', title);
-            formData.append('category', category);
 
             try {
-                const response = await fetch(`${API_BASE}/tools/upload_pdf_manual`, {
+                const response = await fetch(`${API_BASE}/tools/upload_pdf_manual?title=${encodeURIComponent(title)}&category=${encodeURIComponent(category)}`, {
                     method: 'POST',
                     body: formData
                 });

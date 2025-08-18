@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>יצירת PDF מדריך למערכת</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+        }
+
+        .rtl {
+            direction: rtl;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body class="rtl">
+    <h1>יצירת מדריך PDF למערכת PDF Q&A</h1>
+    <button onclick="createSystemManual()">צור מדריך למערכת</button>
+
+    <script>
+        function createSystemManual() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Set up Hebrew support (basic)
+            doc.setFont("helvetica");
+
+            // Title
+            doc.setFontSize(20);
+            doc.text("PDF Q&A System - User Manual", 20, 30);
+
+            doc.setFontSize(12);
+            let y = 50;
+
+            const content = [
+                "System Overview:",
+                "This is a PDF Question & Answer system that allows you to:",
+                "1. Upload PDF documents containing manuals or documentation",
+                "2. Ask questions about the uploaded content",
+                "3. Get AI-powered answers based on the document content",
+                "",
+                "How to Upload a PDF:",
+                "1. Click on 'Choose File' button",
+                "2. Select a PDF file from your computer (max 10MB)",
+                "3. Enter a descriptive title for the document",
+                "4. Select or enter a category",
+                "5. Click 'Upload PDF' button",
+                "6. Wait for the success message",
+                "",
+                "How to Ask Questions:",
+                "1. Type your question in the question field",
+                "2. Optionally select a specific category to search in",
+                "3. Click 'Ask Question' button",
+                "4. The AI will search through uploaded documents",
+                "5. You'll get an answer based on relevant content",
+                "",
+                "Troubleshooting:",
+                "- Upload Issues: Check file size and format (PDF only)",
+                "- No Answer: Try rephrasing your question",
+                "- Irrelevant Answers: Check if the question matches document content",
+                "",
+                "System Features:",
+                "- Semantic search using AI embeddings",
+                "- Support for multiple document categories",
+                "- Similarity scoring for answer relevance",
+                "- Context-aware response generation",
+                "",
+                "Technical Specifications:",
+                "- Supported format: PDF",
+                "- Maximum file size: 10MB",
+                "- Text extraction: Automatic",
+                "- Search technology: Vector similarity",
+                "- AI Model: Google Gemini",
+                "",
+                "FAQ:",
+                "Q: Can I upload multiple PDFs?",
+                "A: Yes, you can upload multiple documents in different categories.",
+                "",
+                "Q: How accurate are the answers?",
+                "A: Answers are based on document content with high accuracy.",
+                "",
+                "Q: Can I delete uploaded documents?",
+                "A: Currently, document management features are not available in the UI."
+            ];
+
+            content.forEach(line => {
+                if (y > 280) {
+                    doc.addPage();
+                    y = 30;
+                }
+
+                if (line.startsWith("Q:") || line.startsWith("A:")) {
+                    doc.setFont("helvetica", "bold");
+                } else if (line.endsWith(":")) {
+                    doc.setFont("helvetica", "bold");
+                } else {
+                    doc.setFont("helvetica", "normal");
+                }
+
+                if (line) {
+                    doc.text(line, 20, y);
+                }
+                y += 7;
+            });
+
+            doc.save("system_manual.pdf");
+            alert("System manual PDF created and downloaded!");
+        }
+    </script>
+</body>
+
+</html>
