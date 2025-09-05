@@ -21,7 +21,14 @@ import asyncio
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
+from pydantic import BaseModel
+
+class FAQRequest(BaseModel):
+    """בקשה להפקת שאלות ותשובות ממסמך או טקסט חופשי"""
+    document_id: Optional[int] = None
+    text: Optional[str] = None
+    num_questions: int = 5
 from contextlib import asynccontextmanager
 import numpy as np
 
@@ -88,7 +95,7 @@ class MCPToolRequest(BaseModel):
 
 class MCPResponse(BaseModel):
     success: bool
-    data: Any
+    data: Optional[Any] = None
     error: Optional[str] = None
 
 class PDFUploadRequest(BaseModel):
@@ -132,6 +139,36 @@ class GeminiManager:
         self.embedding_model_name = 'models/embedding-001'
         if GEMINI_API_KEY:
             self.model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    async def generate_faq(self, text: str, num_questions: int = 5) -> List[Dict[str, str]]:
+        """הפק שאלות ותשובות (FAQ) מתוך טקסט בעזרת Gemini"""
+        prompt = f"""
+        קבל את הטקסט הבא מתוך מסמך טכני או מדריך למשתמש:
+        ---
+        {text}
+        ---
+        הפק {num_questions} שאלות נפוצות (FAQ) בעברית, וענה עליהן בקצרה ובבהירות. החזר בפורמט JSON:
+        [{{"question": "...", "answer": "..."}}, ...]
+        אל תמציא מידע שלא מופיע בטקסט.
+        """
+        response = await self.generate_response(prompt)
+        try:
+            # Clean the response - remove markdown code blocks if present
+            cleaned_response = response.strip()
+            if cleaned_response.startswith('```json'):
+                cleaned_response = cleaned_response[7:]  # Remove ```json
+            if cleaned_response.endswith('```'):
+                cleaned_response = cleaned_response[:-3]  # Remove ```
+            cleaned_response = cleaned_response.strip()
+            
+            faqs = json.loads(cleaned_response)
+            if isinstance(faqs, list):
+                return faqs
+            else:
+                return []
+        except Exception as e:
+            logger.error(f"JSON parsing failed: {e}, raw response: {response}")
+            return [{"question": "שגיאה בפענוח התשובה מהמודל", "answer": response}]
     
     def chunk_text(self, text: str, max_chars: int = 15000) -> List[str]:
         """Split text into chunks that fit within Gemini's limits - STRICT enforcement."""
@@ -266,6 +303,29 @@ class GeminiManager:
 
 # Initialize Gemini manager
 gemini_manager = GeminiManager()
+
+# כלי הפקת שאלות ותשובות (FAQ) ממסמך
+@app.post("/tools/generate_faq", response_model=MCPResponse)
+async def generate_faq(request: FAQRequest):
+    """הפק שאלות ותשובות נפוצות (FAQ) ממסמך או טקסט חופשי"""
+    try:
+        # שליפת טקסט מהמסמך אם document_id סופק
+        text = request.text
+        if not text and request.document_id:
+            def _db_op():
+                with db_manager.get_connection() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT content FROM documents WHERE id = %s", (request.document_id,))
+                        row = cur.fetchone()
+                        return row['content'] if row else None
+            text = await asyncio.to_thread(_db_op)
+        if not text:
+            return MCPResponse(success=False, error="לא סופק טקסט או document_id חוקי")
+        faqs = await gemini_manager.generate_faq(text, request.num_questions)
+        return MCPResponse(success=True, data={"faqs": faqs})
+    except Exception as e:
+        logger.error(f"FAQ generation failed: {e}")
+        return MCPResponse(success=False, error=str(e))
 
 @app.get("/health")
 async def health_check():
@@ -457,6 +517,11 @@ async def list_tools():
             "name": "ask_pdf_manual",
             "description": "Ask questions about uploaded PDF manuals",
             "parameters": ["question", "pdf_category", "limit"]
+        },
+        {
+            "name": "generate_faq",
+            "description": "Generate FAQ questions and answers from document or text",
+            "parameters": ["document_id", "text", "num_questions"]
         }
     ]
     
